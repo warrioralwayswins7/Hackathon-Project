@@ -1,11 +1,10 @@
-﻿const dotenv = require("dotenv");
+const dotenv = require("dotenv");
 const express = require("express");
 const OpenAI = require("openai");
 const path = require("path");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
-dotenv.config({ path: path.join(__dirname, "..", "frontend", ".env") });
-dotenv.config({ path: path.join(__dirname, "..", ".env") });
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,7 +33,9 @@ app.post("/api/doctorAi", async (req, res) => {
       ? language
       : "en";
 
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY;
+
+    if (!apiKey) {
       return res.status(503).json({
         error: "AI is not configured. Add OPENAI_API_KEY to .env."
       });
@@ -48,25 +49,43 @@ app.post("/api/doctorAi", async (req, res) => {
       bn: "Bengali"
     };
 
+    const isGroq = apiKey.startsWith("gsk_");
     const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: apiKey,
+      baseURL: isGroq ? "https://api.groq.com/openai/v1" : undefined
     });
 
-    const result = await client.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      instructions:
-        "You provide general health education only. Reply in " +
-        languageNames[selectedLanguage] +
-        ". Do not claim to diagnose, prescribe medicines, or replace " +
-        "a licensed healthcare professional. Encourage professional " +
-        "care for personal medical concerns. For emergencies, advise " +
-        "contacting local emergency services. Do not request identifying " +
-        "patient information.",
-      input: question.trim(),
-      max_output_tokens: 500
+    const defaultModel = isGroq ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
+    const configuredModel = process.env.OPENAI_MODEL;
+    const model =
+      isGroq && (!configuredModel || configuredModel.startsWith("gpt"))
+        ? "llama-3.3-70b-versatile"
+        : configuredModel || defaultModel;
+
+    const completion = await client.chat.completions.create({
+      model: model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You provide general health education only. Reply in " +
+            languageNames[selectedLanguage] +
+            ". Do not claim to diagnose, prescribe medicines, or replace " +
+            "a licensed healthcare professional. Encourage professional " +
+            "care for personal medical concerns. For emergencies, advise " +
+            "contacting local emergency services. Do not request identifying " +
+            "patient information."
+        },
+        {
+          role: "user",
+          content: question.trim()
+        }
+      ],
+      max_tokens: 500
     });
 
-    res.json({ answer: result.output_text });
+    const answer = completion.choices[0]?.message?.content || "";
+    res.json({ answer });
   } catch (error) {
     console.error("Doctor AI request failed:", error.message);
     res.status(500).json({
@@ -75,10 +94,14 @@ app.post("/api/doctorAi", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  const frontendUrl = process.env.FRONTEND_URL || `http://localhost:${PORT}`;
-  const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+if (require.main === module || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    const frontendUrl = process.env.FRONTEND_URL || `http://localhost:${PORT}`;
+    const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
 
-  console.log(`CareMesh AI frontend: ${frontendUrl}`);
-  console.log(`CareMesh AI backend API: ${backendUrl}/api/doctorAi`);
-});
+    console.log(`CareMesh AI frontend: ${frontendUrl}`);
+    console.log(`CareMesh AI backend API: ${backendUrl}/api/doctorAi`);
+  });
+}
+
+module.exports = app;

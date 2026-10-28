@@ -3,7 +3,7 @@ CareMesh AI — शुरू करने के आसान निर्दे
 1. ZIP को Extract करें। अंदर CareMesh-AI नाम का folder मिलेगा।
 2. VS Code खोलें → File → Open Folder → CareMesh-AI folder चुनें।
 3. Project folder में terminal खोलें और `npm install` चलाएँ।
-4. `frontend/.env` में frontend URL (`http://localhost:3000`) और `backend/.env` में backend URL (`http://localhost:3000`) अलग-अलग दिए गए हैं। Doctor AI का API endpoint `http://localhost:3000/api/doctorAi` है। Doctor AI के लिए अपनी निजी `OPENAI_API_KEY` `backend/.env` में uncomment करके जोड़ें। पुरानी root `.env` भी fallback के रूप में पढ़ी जाती है। API key को frontend files में न रखें।
+4. केवल `backend/.env` इस्तेमाल करें। इसे `backend/.env.example` से बनाएँ; `PORT`, `BACKEND_URL` और `FRONTEND_URL` के defaults local development के लिए पहले से दिए हैं। Doctor AI के लिए अपनी निजी `OPENAI_API_KEY` इसी file में जोड़ें। Root `.env` और `frontend/.env` इस्तेमाल नहीं होते। API key को frontend files में न रखें।
 5. `npm start` चलाएँ और `http://localhost:3000` खोलें।
 6. Dashboard खुलेगा और sample demo records दिखेंगे।
 7. Patients / Follow-up tasks / Appointments / Referrals / Labs & pharmacy में Add/Create बटन से demo records बनाएँ।
@@ -22,7 +22,7 @@ CareMesh AI — शुरू करने के आसान निर्दे
 - frontend/config.js: browser Firebase configuration
 - backend/server.js: Express API और frontend file server
 - backend/.env: private server-side environment settings; इसे साझा न करें
-- frontend/.env.example: static frontend के लिए env-file/security जानकारी
+- backend/.env.example: backend की local environment settings का सुरक्षित template
 - frontend/archive और backend/archive: पुराने snapshots, runtime में उपयोग नहीं होते
 
 महत्वपूर्ण:
