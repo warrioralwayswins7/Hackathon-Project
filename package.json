@@ -1,0 +1,15 @@
+﻿
+{
+  "name": "caremesh-ai",
+  "version": "1.0.0",
+  "private": true,
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "dotenv": "^16.4.7",
+    "openai": "^5.20.0"
+  }
+}
